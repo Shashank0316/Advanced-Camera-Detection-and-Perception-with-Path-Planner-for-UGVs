@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vision-Based Autonomous Navigation - Dash Camera Analysis</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+
+  <!-- Header -->
+  <header>
+    <div class="brand">
+      <div class="brand-icon">CV</div>
+      <div>
+        <div class="brand-title">Vision-Based Autonomous Navigation</div>
+        <div class="brand-subtitle">Advanced Camera Detection and Perception with Path Planner for UGV's</div>
+      </div>
+    </div>
+    <div class="header-badges">
+      <div class="badge">
+        <span class="badge-dot" id="ws-dot"></span>
+        <span id="ws-status-text">CONNECTING...</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Video Source Selection Toolbar -->
+  <div style="padding: 10px 20px 0 20px;">
+    <div class="source-toolbar">
+      <div class="source-btns">
+        <input type="file" id="video-file-input" accept="video/mp4,video/avi,video/quicktime,video/x-matroska,video/webm">
+        <button class="btn btn-secondary" id="btn-upload">📁 Upload Video File</button>
+        <button class="btn btn-secondary" id="btn-webcam">📷 Live Webcam</button>
+      </div>
+      <div class="source-info" id="source-label">Source: Please upload a video file or connect a webcam</div>
+    </div>
+  </div>
+
+  <!-- Main Dashboard Grid -->
+  <main class="dashboard-grid">
+
+    <!-- Left Column: Video Feeds & Controls -->
+    <div class="panel-col">
+
+      <!-- Main Video Card with CV Overlay -->
+      <div class="card" id="main-video-card">
+        <div class="card-header">
+          <span>Dash Camera - Road Segmentation & Obstacle Detection</span>
+          <span class="indicator">CLASSICAL CV</span>
+        </div>
+        <div class="card-body" style="padding: 0;">
+          <div class="video-container">
+            <div class="action-banner" id="action-banner">ACTION: INITIALIZING...</div>
+            <img id="feed-main-video" alt="Dash Camera View" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='640' height='360'><rect fill='%230b0f19' width='100%' height='100%'/><text x='50%' y='50%' fill='%2364748b' text-anchor='middle' font-family='sans-serif'>Loading Video Stream...</text></svg>">
+          </div>
+        </div>
+      </div>
+
+      <!-- Playback Controls Bar -->
+      <div class="control-bar">
+        <button class="btn btn-primary" id="btn-play">▶ Play</button>
+        <button class="btn btn-secondary" id="btn-step">⏭ Step Frame</button>
+        <button class="btn btn-secondary" id="btn-restart">↺ Restart</button>
+        <button class="btn btn-secondary" id="btn-plot">📊 View Trajectory Plot</button>
+      </div>
+
+      <!-- Secondary Vision Feeds Row (2 Feeds) -->
+      <div class="vision-row">
+
+        <!-- Feed 1: Binary Traversability Mask -->
+        <div class="card vision-card">
+          <div class="card-header">
+            <span>Traversability Mask</span>
+            <span class="indicator">ROAD VS HAZARD</span>
+          </div>
+          <div class="card-body vision-feed-box" style="padding: 0;">
+            <img id="feed-traversable" alt="Traversable Road Mask" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='320' height='180'><rect fill='%23000' width='100%' height='100%'/></svg>">
+            <span class="feed-watermark">White: Safe Road | Black: Obstacle / Off-road</span>
+          </div>
+        </div>
+
+        <!-- Feed 2: Visual Odometry Optical Flow -->
+        <div class="card vision-card">
+          <div class="card-header">
+            <span>Visual Odometry</span>
+            <span class="indicator">LUCAS-KANADE FLOW</span>
+          </div>
+          <div class="card-body vision-feed-box" style="padding: 0;">
+            <img id="feed-optical-flow" alt="Optical Flow Features" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='320' height='180'><rect fill='%23000' width='100%' height='100%'/></svg>">
+            <span class="feed-watermark">Feature Ego-Motion Tracking</span>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- Right Column: Trajectory Map, Steering Dial, Telemetry, Console -->
+    <div class="panel-col">
+
+      <!-- 2D Reconstructed Trajectory Map Card -->
+      <div class="card" id="trajectory-card">
+        <div class="card-header">
+          <span>Reconstructed Trajectory (Visual Odometry)</span>
+          <span class="indicator">2D ESTIMATED PATH</span>
+        </div>
+        <div class="card-body" style="padding: 0; position: relative;">
+          <canvas id="trajectory-canvas"></canvas>
+        </div>
+      </div>
+
+      <!-- Steering Advisory Dial -->
+      <div class="steering-dial-box">
+        <span style="font-size: 11px; color: var(--text-muted); font-weight: 700;">◄ STEER LEFT</span>
+        <div class="steering-bar-container">
+          <div class="steering-center-mark"></div>
+          <div class="steering-indicator" id="steering-indicator"></div>
+        </div>
+        <span style="font-size: 11px; color: var(--text-muted); font-weight: 700;">STEER RIGHT ►</span>
+      </div>
+
+      <!-- Telemetry Stats Grid -->
+      <div class="stats-grid">
+        <div class="stat-box">
+          <div class="stat-label">Speed</div>
+          <div class="stat-val" id="stat-speed">0 km/h</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-label">Steer Angle</div>
+          <div class="stat-val" id="stat-steer">0.0°</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-label">Distance</div>
+          <div class="stat-val" id="stat-dist">0 m</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-label">Obstacles</div>
+          <div class="stat-val" id="stat-obs-count">0</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-label">Nearest Obs</div>
+          <div class="stat-val" id="stat-nearest-obs">--</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-label">VO Pose (X, Y)</div>
+          <div class="stat-val" id="stat-vo-pose">(0.0, 0.0)</div>
+        </div>
+        <div class="stat-box" style="grid-column: span 2;">
+          <div class="stat-label">Visible hotspots</div>
+          <div class="stat-val" id="stat-features">0</div>
+        </div>
+      </div>
+
+      <!-- Pipeline Console Output -->
+      <div class="card" id="console-card">
+        <div class="card-header">
+          <span>Pipeline Log (Perception → Visual Odometry → Steering)</span>
+          <span class="indicator">CONSOLE</span>
+        </div>
+        <div class="card-body" style="padding: 6px;">
+          <div id="console-output"></div>
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- Plot Modal Popup -->
+  <div class="modal-overlay" id="plot-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 style="color: var(--accent-cyan);">Car Trajectory & Driving Analysis</h3>
+        <button class="modal-close" id="modal-close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <img id="plot-modal-img" alt="Trajectory Analysis Plot">
+      </div>
+      <div style="display: flex; justify-content: flex-end; gap: 10px;">
+        <a href="/logs/trajectory_log.csv" download="trajectory_log.csv" class="btn btn-secondary">⬇ Download CSV Log</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="/static/js/trajectory_map.js"></script>
+  <script src="/static/js/dashboard.js"></script>
+</body>
+</html>

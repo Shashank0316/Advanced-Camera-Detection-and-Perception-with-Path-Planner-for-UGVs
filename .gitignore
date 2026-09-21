@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+
+# Environments
+.env
+venv/
+env/
+ENV/
+
+# Large media files and user uploads
+uploads/*
+!uploads/.gitkeep
+*.rar
+*.zip
+
+# Run logs and generated videos
+logs/*.mp4
+logs/*.avi
+logs/*.mkv
+
+# OS generated files
+.DS_Store
+Thumbs.db
